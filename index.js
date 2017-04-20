@@ -35,10 +35,7 @@ module.exports = function (args, opts) {
     var defaults = opts['default'] || {};
     
     var argv = { _ : [] };
-    Object.keys(flags.bools).forEach(function (key) {
-        setArg(key, defaults[key] === undefined ? false : defaults[key]);
-    });
-    
+
     var notFlags = [];
 
     if (args.indexOf('--') !== -1) {
@@ -139,7 +136,13 @@ module.exports = function (args, opts) {
                     setArg(letters[j], next, arg)
                     continue;
                 }
-                
+
+                if(flags.strings[letters[j]]) {
+                    setArg(letters[j], next, arg);
+                    broken = true;
+                    break;
+                }
+
                 if (/[A-Za-z]/.test(letters[j]) && /=/.test(next)) {
                     setArg(letters[j], next.split('=')[1], arg);
                     broken = true;
