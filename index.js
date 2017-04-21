@@ -27,7 +27,7 @@ module.exports = function (args, opts) {
 
     [].concat(opts.string).filter(Boolean).forEach(function (key) {
         flags.strings[key] = true;
-        if (aliases[key]) {
+        if (aliases.hasOwnProperty(key)) {
             flags.strings[aliases[key]] = true;
         }
      });
