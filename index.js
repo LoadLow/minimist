@@ -73,7 +73,7 @@ module.exports = function (args, opts) {
         });
 
         var key = keys[keys.length - 1];
-        if (!o[key].hasOwnProperty(key) || flags.hasOwnProperty(key) || typeof o[key] === 'boolean') {
+        if (!o.hasOwnProperty(key) || flags.hasOwnProperty(key) || typeof o[key] === 'boolean') {
             o[key] = value;
         }
         else if (Array.isArray(o[key])) {
