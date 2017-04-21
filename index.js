@@ -1,6 +1,6 @@
 module.exports = function (args, opts) {
     if (!opts) opts = {};
-    
+
     var flags = { bools : {}, strings : {}, unknownFn: null };
 
     if (typeof opts['unknown'] === 'function') {
@@ -45,7 +45,9 @@ module.exports = function (args, opts) {
 
     function argDefined(key, arg) {
         return (flags.allBools && /^--[^=]+$/.test(arg)) ||
-            flags.strings[key] || flags.bools[key] || aliases[key];
+            flags.strings.hasOwnProperty(key)
+                || flags.bools.hasOwnProperty(key)
+                || aliases.hasOwnProperty(key);
     }
 
     function setArg (key, val, arg) {
@@ -54,11 +56,11 @@ module.exports = function (args, opts) {
         }
 
         var value = !flags.strings[key] && isNumber(val)
-            ? Number(val) : val
-        ;
+            ? Number(val) : val;
+
         setKey(argv, key.split('.'), value);
-        
-        (aliases[key] || []).forEach(function (x) {
+
+        (aliases.hasOwnProperty(key) ? aliases[key] : []).forEach(function (x) {
             setKey(argv, x.split('.'), value);
         });
     }
@@ -71,7 +73,7 @@ module.exports = function (args, opts) {
         });
 
         var key = keys[keys.length - 1];
-        if (o[key] === undefined || flags.bools[key] || typeof o[key] === 'boolean') {
+        if (!o[key].hasOwnProperty(key) || flags.hasOwnProperty(key) || typeof o[key] === 'boolean') {
             o[key] = value;
         }
         else if (Array.isArray(o[key])) {
@@ -84,7 +86,7 @@ module.exports = function (args, opts) {
     
     function aliasIsBoolean(key) {
       return aliases[key].some(function (x) {
-          return flags.bools[x];
+          return flags.bools.hasOwnProperty(x);
       });
     }
 
@@ -98,7 +100,7 @@ module.exports = function (args, opts) {
             var m = arg.match(/^--([^=]+)=([\s\S]*)$/);
             var key = m[1];
             var value = m[2];
-            if (flags.bools[key]) {
+            if (flags.bools.hasOwnProperty(key)) {
                 value = value !== 'false';
             }
             setArg(key, value, arg);
@@ -111,9 +113,9 @@ module.exports = function (args, opts) {
             var key = arg.match(/^--(.+)/)[1];
             var next = args[i + 1];
             if (next !== undefined && !/^-/.test(next)
-            && !flags.bools[key]
+            && !flags.hasOwnProperty(key)
             && !flags.allBools
-            && (aliases[key] ? !aliasIsBoolean(key) : true)) {
+            && (aliases.hasOwnProperty(key) ? !aliasIsBoolean(key) : true)) {
                 setArg(key, next, arg);
                 i++;
             }
@@ -122,7 +124,7 @@ module.exports = function (args, opts) {
                 i++;
             }
             else {
-                setArg(key, flags.strings[key] ? '' : true, arg);
+                setArg(key, flags.strings.hasOwnProperty(key) ? '' : true, arg);
             }
         }
         else if (/^-[^-]+/.test(arg)) {
@@ -137,7 +139,7 @@ module.exports = function (args, opts) {
                     continue;
                 }
 
-                if(flags.strings[letters[j]]) {
+                if(flags.strings.hasOwnProperty(letters[j])) {
                     setArg(letters[j], next, arg);
                     broken = true;
                     break;
@@ -162,15 +164,15 @@ module.exports = function (args, opts) {
                     break;
                 }
                 else {
-                    setArg(letters[j], flags.strings[letters[j]] ? '' : true, arg);
+                    setArg(letters[j], flags.strings.hasOwnProperty(letters[j]) ? '' : true, arg);
                 }
             }
             
             var key = arg.slice(-1)[0];
             if (!broken && key !== '-') {
                 if (args[i+1] && !/^(-|--)[^-]/.test(args[i+1])
-                && !flags.bools[key]
-                && (aliases[key] ? !aliasIsBoolean(key) : true)) {
+                && !flags.bools.hasOwnProperty(key)
+                && (aliases.hasOwnProperty(key) ? !aliasIsBoolean(key) : true)) {
                     setArg(key, args[i+1], arg);
                     i++;
                 }
@@ -179,7 +181,7 @@ module.exports = function (args, opts) {
                     i++;
                 }
                 else {
-                    setArg(key, flags.strings[key] ? '' : true, arg);
+                    setArg(key, flags.strings.hasOwnProperty(key) ? '' : true, arg);
                 }
             }
         }
@@ -200,7 +202,7 @@ module.exports = function (args, opts) {
         if (!hasKey(argv, key.split('.'))) {
             setKey(argv, key.split('.'), defaults[key]);
             
-            (aliases[key] || []).forEach(function (x) {
+            (aliases.hasOwnProperty(key) ? aliases[key] : []).forEach(function (x) {
                 setKey(argv, x.split('.'), defaults[key]);
             });
         }
@@ -224,11 +226,11 @@ module.exports = function (args, opts) {
 function hasKey (obj, keys) {
     var o = obj;
     keys.slice(0,-1).forEach(function (key) {
-        o = (o[key] || {});
+        o = o.hasOwnProperty(key) ? o[key] : {};
     });
 
     var key = keys[keys.length - 1];
-    return key in o;
+    return o.hasOwnProperty(key);
 }
 
 function isNumber (x) {
@@ -236,4 +238,5 @@ function isNumber (x) {
     if (/^0x[0-9a-f]+$/i.test(x)) return true;
     return /^[-+]?(?:\d+(?:\.\d*)?|\.\d+)(e[-+]?\d+)?$/.test(x);
 }
+
 
